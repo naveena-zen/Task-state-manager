@@ -38,7 +38,7 @@ The application follows a client-side state management approach:
   - Filtering logic
   - CRUD operations
 - UI updates dynamically through data binding.
-
+- 
 ## How to Run
 
 1. Download or clone the repository.
