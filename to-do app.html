@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html ng-app="taskMasterApp">
+<head>
+    <title>TaskMaster Hub - To-Do List</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+        }
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0c1b5a 0%, #050939 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { margin: 0; font-weight: 600; font-size: 2.5rem; }
+        .stats { font-size: 1.1rem; margin-top: 10px; }
+        .filter-group { padding: 20px 30px; background: #f8f9ff; border-bottom: 1px solid #e0e6ff; }
+        .filter-group button {
+            margin: 0 5px;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .filter-group button.active {
+            background: linear-gradient(135deg, #0c1b5a 0%, #050939 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(12, 27, 90, 0.4);
+        }
+        .input-group-custom {
+            padding: 30px;
+            background: white;
+            border-bottom: 1px solid #e0e6ff;
+        }
+        .form-control {
+            border: 2px solid #e0e6ff;
+            border-radius: 15px;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        .form-control:focus { 
+            border-color: #0c1b5a; 
+            box-shadow: 0 0 0 0.2rem rgba(12, 27, 90, 0.25); 
+        }
+        .btn-add {
+            background: linear-gradient(135deg, #0c1b5a 0%, #050939 100%);
+            color: white !important;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .btn-add:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 20px rgba(12, 27, 90, 0.4); 
+            color: white !important;
+        }
+        .task-list { max-height: 500px; overflow-y: auto; }
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e0e6ff;
+            transition: all 0.3s;
+            animation: slideIn 0.3s ease-out;
+        }
+        .task-item:last-child { border-bottom: none; }
+        .task-item:hover { background: #f8f9ff; transform: translateX(5px); }
+        .task-checkbox { transform: scale(1.5); margin-right: 15px; }
+        .task-text {
+            flex-grow: 1;
+            font-size: 1.1rem;
+            padding: 10px;
+        }
+        .task-text.done-true {
+            text-decoration: line-through;
+            color: #9e9e9e;
+            opacity: 0.7;
+        }
+        .task-text.editing {
+            border: 2px solid #0c1b5a;
+            border-radius: 10px;
+            background: white;
+            padding: 10px 15px;
+        }
+        .btn-task {
+            margin-left: 10px;
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .btn-edit { background: #ffd700; color: #333; }
+        .btn-edit:hover { background: #ffed4a; transform: translateY(-1px); }
+        .btn-save { background: #28a745; color: white; }
+        .btn-save:hover { background: #218838; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-delete:hover { background: #c82333; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            .task-item { flex-direction: column; align-items: flex-start; }
+            .task-text { margin-bottom: 10px; }
+            .btn-task { margin-left: 0; margin-top: 5px; }
+        }
+    </style>
+</head>
+<body ng-controller="TodoController as todoCtrl">
+    <div class="app-container">
+        <div class="header">
+            <h1><i class="fas fa-tasks me-3"></i>TaskMaster Hub</h1>
+            <div class="stats">
+                <span ng-show="todoCtrl.remaining() > 0" class="badge bg-warning">{{todoCtrl.remaining()}} pending</span>
+            </div>
+        </div>
+        <!-- Filter Buttons -->
+        <div class="filter-group">
+            <button ng-click="todoCtrl.filterStatus = 'all'" ng-class="{active: todoCtrl.filterStatus === 'all'}">
+                <i class="fas fa-list"></i> All
+            </button>
+            <button ng-click="todoCtrl.filterStatus = 'pending'" ng-class="{active: todoCtrl.filterStatus === 'pending'}">
+                <i class="fas fa-clock"></i> Pending
+            </button>
+            <button ng-click="todoCtrl.filterStatus = 'completed'" ng-class="{active: todoCtrl.filterStatus === 'completed'}">
+                <i class="fas fa-check-double"></i> Completed
+            </button>
+        </div>
+        <!-- Add Task -->
+        <div class="input-group-custom">
+            <div class="input-group">
+                <input type="text" class="form-control" ng-model="todoCtrl.newTask" placeholder="Add a new task..." ng-keypress="todoCtrl.addOnEnter($event)" required>
+                <button class="btn btn-add" ng-click="todoCtrl.addTask()" ng-disabled="!todoCtrl.newTask.trim()">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+        </div>
+        <!-- Task List -->
+        <div class="task-list p-3">
+            <div ng-repeat="task in todoCtrl.filteredTasks() track by $index" class="task-item">
+                <input type="checkbox" class="form-check-input task-checkbox" ng-model="task.completed" ng-click="todoCtrl.onEditMode($index, false)">
+                <span class="task-text" ng-hide="todoCtrl.editMode[$index]" ng-class="{'done-true': task.completed}">{{task.text}}</span>
+                <input class="form-control task-text" ng-show="todoCtrl.editMode[$index]" ng-model="task.text" ng-blur="todoCtrl.onEditMode($index, false)">
+                <div>
+                    <button class="btn btn-task btn-edit" ng-show="!todoCtrl.editMode[$index]" ng-click="todoCtrl.onEditMode($index, true)">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-task btn-save" ng-show="todoCtrl.editMode[$index]" ng-click="todoCtrl.onEditMode($index, false)">
+                        <i class="fas fa-save"></i>
+                    </button>
+                    <button class="btn btn-task btn-delete" ng-click="todoCtrl.deleteTask($index)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div ng-show="todoCtrl.filteredTasks().length === 0" class="text-center text-muted p-5">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p>No tasks here. Add one above!</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        angular.module('taskMasterApp', [])
+            .controller('TodoController', ['$scope', function($scope) {
+                var vm = this;
+                vm.tasks = [
+                    {text: 'Welcome to TaskMaster Hub!', completed: false},
+                    {text: 'Design your first project', completed: true}
+                ];
+                vm.newTask = '';
+                vm.editMode = {};
+                vm.filterStatus = 'all';
+                vm.filteredTasks = function() {
+                    return vm.tasks.filter(function(task) {
+                        if (vm.filterStatus === 'pending') return !task.completed;
+                        if (vm.filterStatus === 'completed') return task.completed;
+                        return true;
+                    });
+                };
+                vm.addTask = function() {
+                    if (vm.newTask.trim()) {
+                        vm.tasks.push({text: vm.newTask.trim(), completed: false});
+                        vm.newTask = '';
+                    }
+                };
+                vm.addOnEnter = function(event) {
+                    if (event.key === 'Enter') vm.addTask();
+                };
+                vm.deleteTask = function(index) {
+                    vm.tasks.splice(index, 1);
+                };
+                vm.onEditMode = function(index, edit) {
+                    vm.editMode[index] = edit;
+                    if (!edit) $scope.$apply();
+                };
+                vm.remaining = function() {
+                    return vm.tasks.filter(function(task) { return !task.completed; }).length;
+                };
+            }]);
+    </script>
+</body>
+</html>
